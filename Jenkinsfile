@@ -41,7 +41,7 @@ pipeline {
             agent {
                 docker {
                     // Use the correct image version required by your Playwright dependency
-                    image 'mcr.microsoft.com/playwright:v1.39.0-noble'
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
                     reuseNode true
                 }
             }
