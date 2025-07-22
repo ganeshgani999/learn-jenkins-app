@@ -11,13 +11,12 @@ pipeline {
             }
             steps {
                 sh '''
-                    ls -la
-                    node --version
-                    npm --version
+                    echo "--- BUILDING ---"
                     npm ci
                     npm run build
-                    ls -la
                 '''
+                // Stash the build artifacts to use in the next stage
+                stash name: 'build-artifacts', includes: 'build/**'
             }
         }
         stage('Test') {
@@ -28,7 +27,11 @@ pipeline {
                 }
             }
             steps {
+                // Unstash the artifacts from the 'Build' stage
+                unstash 'build-artifacts'
+                
                 sh '''
+                    echo "--- TESTING ---"
                     test -f build/index.html
                     npm test
                 '''
@@ -37,7 +40,8 @@ pipeline {
     }
     post {
         always {
-            junit 'test-resutls/junit.xml'
+            // Corrected typo: 'test-results'
+            junit 'test-results/junit.xml'
         }
     }
 }
