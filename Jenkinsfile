@@ -57,7 +57,7 @@ pipeline {
                     # Wait for 10 seconds to ensure the server is ready
                     sleep 10
                     # Run the Playwright tests
-                    npx playwright test
+                    npx playwright test --reporter=html
                 '''
             }
         }
