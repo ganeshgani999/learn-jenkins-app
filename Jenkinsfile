@@ -1,79 +1,77 @@
-
 pipeline {
     agent any 
 
     environment {
-        Node_Imaage = 'node:18-alpine'
+        Node_Image = 'node:18-alpine'
         JestResults = 'jest-results/junit.xml'
     }
 
-        stages {
+    stages {
 
-            stage('Checkout') {
-                steps {
-                    checkout scm
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            agent {
+                docker {
+                    image "${Node_Image}"
+                    reuseNode true
                 }
             }
-            stage('Build') {
-                agent {
-                    docker {
-                        image  `${Node_Imaage}`
-                        reuseNode true
-                    }
-                }
-                steps {
-                    sh '''
-                        ls -la
-                        node --version
-                        npm --version
-                        npm ci
-                        npm run build
-                        ls -la
+            steps {
+                sh '''
+                    ls -la
+                    node --version
+                    npm --version
 
-                        # prefer npm ci for CI reproducibility
-                        npm ci
+                    # Install dependencies
+                    npm ci
 
-                        # build the project
-                        npm run build
-                        
-                    '''
-                }
-                post {
-                    success {
-                    // archive build output for later download / debugging
+                    # Build the project
+                    npm run build
+
+                    ls -la
+                '''
+            }
+            post {
+                success {
                     archiveArtifacts artifacts: 'build/**', allowEmptyArchive: true
-                    }
-                }
-            }
-            stage('Test') {
-                agent {
-                    docker {
-                        image `${Node_Imaage}`
-                        reuseNode true
-                    }
-                }
-                steps {
-                    sh '''
-                        test -f build/index.html
-                        npm test
-                    '''
                 }
             }
         }
-        post {
-            always {
-                junit 'jest-results/junit.xml'
+
+        stage('Test') {
+            agent {
+                docker {
+                    image "${Node_Image}"
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    # Ensure build file exists
+                    test -f build/index.html
+
+                    # Run tests
+                    npm test
+                '''
             }
         }
+    }
+
     post {
+        always {
+            echo 'Pipeline finished.'
+            junit 'jest-results/junit.xml'
+        }
         success {
             echo 'Pipeline completed successfully!'
         }
         failure {
             echo 'Pipeline failed. Please check the logs.'
-        }  
-        always {
-            echo 'Pipeline finished.'
         }
     }
 }
