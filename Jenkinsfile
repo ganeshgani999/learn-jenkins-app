@@ -4,6 +4,7 @@ pipeline {
     environment {
         Node_Image = 'node:18-alpine'
         JestResults = 'jest-results/junit.xml'
+        Play_Wright_Image= 'mcr.microsoft.com/playwright:v1.56.1-noble'
     }
 
     stages {
@@ -57,6 +58,22 @@ pipeline {
 
                     # Run tests
                     npm test
+                '''
+            }
+        }
+
+        stage('E2E') {
+            agent {
+                docker {
+                    image "${Play_Wright_Image}"
+                    reuseNode true
+                }
+            }
+            steps {
+                sh '''
+                    npm install -g serve
+                    serve -s build
+                    npx playwright test
                 '''
             }
         }
