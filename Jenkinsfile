@@ -1,7 +1,11 @@
 
 pipeline {
-
     agent any 
+
+    environment {
+        Node_Imaage = 'node:18-alpine'
+        JestResults = 'jest-results/junit.xml'
+    }
 
         stages {
 
@@ -13,7 +17,7 @@ pipeline {
             stage('Build') {
                 agent {
                     docker {
-                        image 'node:18-alpine'
+                        image  `${Node_Imaage}`
                         reuseNode true
                     }
                 }
@@ -25,14 +29,26 @@ pipeline {
                         npm ci
                         npm run build
                         ls -la
+
+                        # prefer npm ci for CI reproducibility
+                        npm ci
+
+                        # build the project
+                        npm run build
                         
                     '''
+                }
+                post {
+                    success {
+                    // archive build output for later download / debugging
+                    archiveArtifacts artifacts: 'build/**', allowEmptyArchive: true
+                    }
                 }
             }
             stage('Test') {
                 agent {
                     docker {
-                        image 'node:18-alpine'
+                        image `${Node_Imaage}`
                         reuseNode true
                     }
                 }
@@ -49,6 +65,17 @@ pipeline {
                 junit 'jest-results/junit.xml'
             }
         }
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Please check the logs.'
+        }  
+        always {
+            echo 'Pipeline finished.'
+        }
+    }
 }
 
 /*
